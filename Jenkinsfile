@@ -38,7 +38,7 @@ pipeline {
 
         stage('Terraform Init & Plan') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId:312eca79-9b17-45fa-abf6-f2e4bc811eb3 '']]) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId:'312eca79-9b17-45fa-abf6-f2e4bc811eb3']]) {
                     dir("${env.TERRAFORM_DIR}") {
                         sh '''
                             export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
