@@ -2,14 +2,13 @@ pipeline {
     agent any
 
     environment {
-        TF_WORKSPACE = 'dev' // Change as needed
-    }
-
-    tools {
-        terraform 'Terraform_1.6' // Change to your configured Terraform tool name
+        AWS_REGION = 'us-east-2' // Default region, can be overridden per branch
+        TERRAFORM_DIR = 'terraform' // Path to your Terraform code
     }
 
     options {
+        ansiColor('xterm')
+        skipDefaultCheckout()
         timestamps()
     }
 
@@ -20,73 +19,49 @@ pipeline {
             }
         }
 
-        stage('Setup AWS Credentials') {
+        stage('Terraform Validate') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds-id',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    echo 'AWS credentials set.'
+                dir("${env.TERRAFORM_DIR}") {
+                    sh 'terraform init -backend=false'
+                    sh 'terraform validate'
                 }
             }
         }
 
-        stage('Terraform Init') {
+        stage('Terraform Format Check') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds-id',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh '''
-                        terraform init
-                    '''
+                dir("${env.TERRAFORM_DIR}") {
+                    sh 'terraform fmt -check -diff'
                 }
             }
         }
 
-        stage('Terraform Plan') {
+        stage('Terraform Init & Plan') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds-id',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh '''
-                        terraform workspace select ${TF_WORKSPACE} || terraform workspace new ${TF_WORKSPACE}
-                        terraform plan -out=tfplan
-                    '''
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId:312eca79-9b17-45fa-abf6-f2e4bc811eb3 '']]) {
+                    dir("${env.TERRAFORM_DIR}") {
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                            terraform init
+                            terraform plan -out=tfplan
+                        '''
+                    }
                 }
             }
         }
 
         stage('Terraform Apply') {
             when {
-                branch 'main'
-            }
-            steps {
-                input message: 'Approve to apply Terraform changes?'
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds-id',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh '''
-                        terraform apply -auto-approve tfplan
-                    '''
+                allOf {
+                    branch 'main'
+                    expression { return currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-    }
-}
+            steps {
+                input message: 'Apply infrastructure changes?'
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
+                    dir("${env.TERRAFORM_DIR}") {
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS
