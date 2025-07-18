@@ -1,16 +1,10 @@
-module "user" {
-      source = "./modules/iam"
-      jghdtryyjdes = "jessi"
-      
- }
-
-module  "user1" {
-    source = "./modules/s3"    
+resource "aws_iam_user" "querty" {
+    name = var.kjjggfwsss
   
 }
 
-module "user3" {
-    source = "./modules/ec2"
+provider "aws" {
+    region = "us-east-2"
   
 }
 
