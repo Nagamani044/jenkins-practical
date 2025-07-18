@@ -15,7 +15,7 @@ environment {
             steps {
                 git branch: 'main',
                    
-                    url: ''
+                    url: 'https://github.com/Nagamani044/jenkins-practical.git'
             }
         }
 
