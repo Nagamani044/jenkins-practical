@@ -1,5 +1,5 @@
 resource "aws_iam_user" "querty" {
-    name = var.kjjggfwsss
+    name = "dhanuu"
   
 }
 
