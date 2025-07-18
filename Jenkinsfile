@@ -2,7 +2,7 @@ pipeline {
     agent any
 
 environment {
-       AWS_CREDENTIALS_ID = credentials'312eca79-9b17-45fa-abf6-f2e4bc811eb3'  // Replace with actual AWS credential ID
+       AWS_CREDENTIALS_ID = credentials'932b871c-0f68-4eac-8ff6-711821bb4da8'  // Replace with actual AWS credential ID
     }
 
     parameters {
